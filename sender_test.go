@@ -10,7 +10,7 @@ import (
 
 func TestConvert(t *testing.T) {
 	var (
-		sender         = &Sender{"localhost"}
+		sender         = NewSender("localhost")
 		i      int     = 42
 		f0     float32 = 0
 		f1     float32 = 1
