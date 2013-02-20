@@ -1,3 +1,4 @@
+// Package zabbix_sender provides interface to send data to Zabbix server.
 package zabbix_sender
 
 import (
