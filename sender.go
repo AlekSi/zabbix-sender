@@ -42,13 +42,13 @@ func (s *Sender) Convert(kv map[string]interface{}) (b []byte, err error) {
 	d, err := json.Marshal(data)
 	if err == nil {
 		l := uint64(len(d))
-		b = make([]byte, 0, 45+l) // 5 + 8 + 31 + l + 1
+		b = make([]byte, 0, 46+l) // 5 + 8 + 32 + l + 1
 		buf := bytes.NewBuffer(b)
-		buf.Write(header)                                  // 5
-		err = binary.Write(buf, binary.LittleEndian, l)    // 8
-		buf.WriteString(`{"request":"agent data","data":`) // 31
-		buf.Write(d)                                       // l
-		buf.WriteByte('}')                                 // 1
+		buf.Write(header)                                   // 5
+		err = binary.Write(buf, binary.LittleEndian, l)     // 8
+		buf.WriteString(`{"request":"sender data","data":`) // 32
+		buf.Write(d)                                        // l
+		buf.WriteByte('}')                                  // 1
 		b = buf.Bytes()
 	}
 	return

@@ -36,7 +36,7 @@ func TestConvert(t *testing.T) {
 
 	b = b[13:]
 	str := string(b)
-	if !strings.HasPrefix(str, `{"request":"agent data","data":[{`) ||
+	if !strings.HasPrefix(str, `{"request":"sender data","data":[{`) ||
 		strings.Contains(str, `, `) ||
 		strings.Contains(str, `: `) {
 		t.Error("Zabbix's JSON parser will not parse it:", str)
