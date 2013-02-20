@@ -24,7 +24,7 @@ type Sender struct {
 func convertValue(i interface{}) string {
 	switch v := i.(type) {
 	case float32, float64:
-		return fmt.Sprintf("%f", v)
+		return fmt.Sprintf("%.6f", v)
 	default:
 		return fmt.Sprint(v)
 	}
