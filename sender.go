@@ -70,7 +70,7 @@ func (s *Sender) Convert(kv map[string]interface{}) (b []byte, err error) {
 
 	d, err := json.Marshal(data)
 	if err == nil {
-		// there order of fields in "JSON" is important - request should be before data
+		// the order of fields in "JSON" is important - request should be before data
 		now := fmt.Sprint(time.Now().Unix())
 		datalen := uint64(len(d) + len(now) + 42) // 32 + d + 9 + now + 1
 		b = make([]byte, 0, datalen+13)           // datalen + 5 + 8
