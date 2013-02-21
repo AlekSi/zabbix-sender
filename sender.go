@@ -72,16 +72,16 @@ func (s *Sender) Convert(kv map[string]interface{}) (b []byte, err error) {
 	if err == nil {
 		// there order of fields in "JSON" is important - request should be before data
 		now := fmt.Sprint(time.Now().Unix())
-		l := uint64(len(d))
-		b = make([]byte, 0, 55+l+uint64(len(now))) // 5 + 8 + 32 + l + 9 + nl + 1
+		datalen := uint64(len(d) + len(now) + 42) // 32 + d + 9 + now + 1
+		b = make([]byte, 0, datalen+13)           // datalen + 5 + 8
 		buf := bytes.NewBuffer(b)
-		buf.Write(header)                                   // 5
-		err = binary.Write(buf, binary.LittleEndian, l)     // 8
-		buf.WriteString(`{"request":"sender data","data":`) // 32
-		buf.Write(d)                                        // l
-		buf.WriteString(`,"clock":`)                        // 9
-		buf.WriteString(now)                                // nl
-		buf.WriteByte('}')                                  // 1
+		buf.Write(header)                                     // 5
+		err = binary.Write(buf, binary.LittleEndian, datalen) // 8
+		buf.WriteString(`{"request":"sender data","data":`)   // 32
+		buf.Write(d)                                          // d
+		buf.WriteString(`,"clock":`)                          // 9
+		buf.WriteString(now)                                  // now
+		buf.WriteByte('}')                                    // 1
 		b = buf.Bytes()
 	}
 	return

@@ -2,6 +2,8 @@ package zabbix_sender_test
 
 import (
 	. "."
+	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -31,8 +33,13 @@ func TestConvert(t *testing.T) {
 	if string(b[0:5]) != "ZBXD\x01" {
 		t.Error("Wrong header")
 	}
-	if string(b[5:13]) != "\x64\x01\x00\x00\x00\x00\x00\x00" {
-		t.Errorf("Wrong size: %x", b[5:13])
+	var datalen uint64
+	err = binary.Read(bytes.NewBuffer(b[5:13]), binary.LittleEndian, &datalen)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if datalen != uint64(len(b))-13 {
+		t.Errorf("Wrong size: %d (expected %d)", datalen, len(b)-13)
 	}
 
 	b = b[13:]
