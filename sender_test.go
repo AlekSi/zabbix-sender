@@ -23,6 +23,7 @@ func TestConvert(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("%s", b)
 	if len(b) != cap(b) {
 		t.Errorf("Optimize: len(%d) != cap(%d)", len(b), cap(b))
 	}

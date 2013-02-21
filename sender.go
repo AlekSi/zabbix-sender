@@ -1,4 +1,7 @@
 // Package zabbix_sender provides interface to send data to Zabbix server.
+//
+// It works similar to Zabbix's own zabbix_sender
+// (https://www.zabbix.com/documentation/1.8/manpages/zabbix_sender).
 package zabbix_sender
 
 import (
@@ -10,6 +13,7 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 )
 
 var (
@@ -67,13 +71,16 @@ func (s *Sender) Convert(kv map[string]interface{}) (b []byte, err error) {
 	d, err := json.Marshal(data)
 	if err == nil {
 		// there order of fields in "JSON" is important - request should be before data
+		now := fmt.Sprint(time.Now().Unix())
 		l := uint64(len(d))
-		b = make([]byte, 0, 46+l) // 5 + 8 + 32 + l + 1
+		b = make([]byte, 0, 55+l+uint64(len(now))) // 5 + 8 + 32 + l + 9 + nl + 1
 		buf := bytes.NewBuffer(b)
 		buf.Write(header)                                   // 5
 		err = binary.Write(buf, binary.LittleEndian, l)     // 8
 		buf.WriteString(`{"request":"sender data","data":`) // 32
 		buf.Write(d)                                        // l
+		buf.WriteString(`,"clock":`)                        // 9
+		buf.WriteString(now)                                // nl
 		buf.WriteByte('}')                                  // 1
 		b = buf.Bytes()
 	}
