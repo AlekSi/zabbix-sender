@@ -83,7 +83,7 @@ func TestMarshal(t *testing.T) {
 		t.Errorf("Optimize: len(%d) != cap(%d)", len(b), cap(b))
 	}
 
-	if string(b[0:5]) != "ZBXD\x01" {
+	if string(b[:5]) != "ZBXD\x01" {
 		t.Error("Wrong header")
 	}
 	var datalen uint64
@@ -108,9 +108,4 @@ func TestMarshal(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func ExampleMakeDataItems() {
-	data := map[string]interface{}{"rpm": 42.12, "errors": 1}
-	MakeDataItems(data, "localhost")
 }

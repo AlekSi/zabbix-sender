@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+var (
+	header = []byte("ZBXD\x01")
+)
+
 // Converts value to format accepted by Zabbix server.
 // It uses "%.6f" format for floats,
 // and fmt.Sprint() (which will try String() and Error() methods) for other types.
@@ -58,7 +62,7 @@ func (di DataItems) Marshal() (b []byte, err error) {
 		datalen := uint64(len(d) + len(now) + 42) // 32 + d + 9 + now + 1
 		b = make([]byte, 0, datalen+13)           // datalen + 5 + 8
 		buf := bytes.NewBuffer(b)
-		buf.WriteString("ZBXD\x01")                           // 5
+		buf.Write(header)                                     // 5
 		err = binary.Write(buf, binary.LittleEndian, datalen) // 8
 		buf.WriteString(`{"request":"sender data","data":`)   // 32
 		buf.Write(d)                                          // d
