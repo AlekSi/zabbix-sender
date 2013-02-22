@@ -10,21 +10,23 @@ import (
 	"testing"
 )
 
-func TestMakeDataItems(t *testing.T) {
-	var (
-		f0  float32 = 0
-		f1  float32 = 1
-		f32 float32 = 3.141592653
-		f64 float64 = 3.141592653
-		i   int     = 42
-		s   string  = "string"
-		e   error   = fmt.Errorf("error")
-		p0  *string
-	)
-	data := map[string]interface{}{"f0": f0, "f1": f1, "float32": f32, "float64": f64,
+var (
+	f0   float32 = 0
+	f1   float32 = 1
+	f32  float32 = 3.141592653
+	f64  float64 = 3.141592653
+	i    int     = 42
+	s    string  = "string"
+	e    error   = fmt.Errorf("error")
+	p0   *string
+	data = map[string]interface{}{"f0": f0, "f1": f1, "float32": f32, "float64": f64,
 		"int": i, "s": s, "e": e, "p0": p0}
+)
 
-	for _, d := range MakeDataItems(data, "localhost") {
+func TestMakeDataItems(t *testing.T) {
+	di := MakeDataItems(data, "localhost")
+	t.Logf("%+v", di)
+	for _, d := range di {
 		if d.Hostname != "localhost" {
 			t.Error("Wrong hostname")
 		}
@@ -71,19 +73,7 @@ func TestMakeDataItems(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
-	var (
-		i   int     = 42
-		f0  float32 = 0
-		f1  float32 = 1
-		f32 float32 = 3.141592653
-		f64 float64 = 3.141592653
-		s   string  = "string"
-		e   error   = fmt.Errorf("error")
-	)
-	di := MakeDataItems(
-		map[string]interface{}{"int": i, "f0": f0, "f1": f1, "float32": f32, "float64p": &f64, "s": s, "e": e},
-		"localhost",
-	)
+	di := MakeDataItems(data, "localhost")
 	b, err := di.Marshal()
 	if err != nil {
 		t.Fatal(err)
