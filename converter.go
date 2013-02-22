@@ -11,6 +11,7 @@ import (
 // Converts value to format accepted by Zabbix server.
 // It uses "%.6f" format for floats,
 // and fmt.Sprint() (which will try String() and Error() methods) for other types.
+// Keep in mind that Zabbix doesn't support negative integers, use floats instead.
 func ConvertValue(i interface{}) string {
 	switch v := i.(type) {
 	case float32:
@@ -48,7 +49,7 @@ func MakeDataItems(kv map[string]interface{}, hostname string) DataItems {
 
 // Converts filled DataItems to format accepted by Zabbix server.
 // It's like dense JSON with binary header, somewhat documented there:
-// https://www.zabbix.com/documentation/1.8/protocols/agent
+// https://www.zabbix.com/documentation/2.0/manual/appendix/items/activepassive
 func (di DataItems) Marshal() (b []byte, err error) {
 	d, err := json.Marshal(di)
 	if err == nil {
