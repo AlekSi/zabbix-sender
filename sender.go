@@ -7,15 +7,21 @@ import (
 	"errors"
 	"io"
 	"net"
+	"regexp"
+	"strconv"
 )
 
 // Unexpected header of Zabbix's response.
 var ErrBadHeader = errors.New("bad header")
 
 type Response struct {
-	Response string `json:"response"` // "success" on success
-	Info     string `json:"info"`     // String like ""Processed 2 Failed 0 Total 2 Seconds spent 0.000034""
+	Response  string `json:"response"` // "success" on success
+	Info      string `json:"info"`     // String like "Processed 2 Failed 1 Total 3 Seconds spent 0.000034"
+	Processed int    // Filled by parsing Info
+	Failed    int    // Filled by parsing Info
 }
+
+var infoRE = regexp.MustCompile(`Processed (\d+) Failed (\d+)`)
 
 // Send DataItems to Zabbix server and wait for response.
 // Returns encountered fatal error like I/O and marshalling/unmarshalling.
@@ -68,5 +74,14 @@ func Send(addr *net.TCPAddr, di DataItems) (res *Response, err error) {
 
 	res = new(Response)
 	err = json.Unmarshal(buf, res)
+	if err == nil {
+		m := infoRE.FindStringSubmatch(res.Info)
+		if len(m) == 3 {
+			p, _ := strconv.Atoi(m[1])
+			f, _ := strconv.Atoi(m[2])
+			res.Processed = p
+			res.Failed = f
+		}
+	}
 	return
 }
