@@ -21,7 +21,7 @@ type Response struct {
 	Failed    int    // Filled by parsing Info
 }
 
-var infoRE = regexp.MustCompile(`Processed (\d+) Failed (\d+)`)
+var infoRE = regexp.MustCompile(`(?i)Processed:? (\d+);? Failed:? (\d+)`)
 
 // Send DataItems to Zabbix server and wait for response.
 // Returns encountered fatal error like I/O and marshalling/unmarshalling.
