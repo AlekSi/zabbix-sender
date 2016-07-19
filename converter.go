@@ -39,12 +39,18 @@ type DataItem struct {
 type DataItems []DataItem
 
 // Convert key/value pairs to DataItems using ConvertValue().
-// Each DataItem's Host is set to hostname, Timestamp is zeroed.
+// Each DataItem's Host is set to hostname, Timestamp to present time.
 func MakeDataItems(kv map[string]interface{}, hostname string) DataItems {
+	return MakeDataItemsWithTimestamp(kv, hostname, time.Now())
+}
+
+// Convert key/value pairs to DataItems using ConvertValue().
+// Each DataItem's Host is set to hostname, Timestamp to ts.
+func MakeDataItemsWithTimestamp(kv map[string]interface{}, hostname string, ts time.Time) DataItems {
 	di := make(DataItems, len(kv))
 	i := 0
 	for k, v := range kv {
-		di[i] = DataItem{hostname, k, 0, ConvertValue(v)}
+		di[i] = DataItem{hostname, k, ts.Unix(), ConvertValue(v)}
 		i++
 	}
 
