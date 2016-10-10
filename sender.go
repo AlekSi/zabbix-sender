@@ -2,10 +2,13 @@ package zabbix_sender
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"io"
+	"io/ioutil"
 	"net"
 	"regexp"
 	"strconv"
@@ -22,6 +25,67 @@ type Response struct {
 }
 
 var infoRE = regexp.MustCompile(`(?i)Processed:? (\d+);? Failed:? (\d+)`)
+
+type TlsParams struct {
+	TLSCAFile            string
+	TLSCertFile          string
+	TLSKeyFile           string
+	TLSServerName        string
+	/* FIXME: support this
+	TLSServerCertIssuer  string
+	TLSServerCertSubject string
+	*/
+}
+
+// Send DataItems to Zabbix server and wait for response.
+// Returns encountered fatal error like I/O and marshalling/unmarshalling.
+// Caller should inspect response (and in some situations also Zabbix server log)
+// to check if all items are accepted.
+func SendTls(addr *net.TCPAddr, di DataItems, tlsparams *TlsParams) (res *Response, err error) {
+	// Load client cert
+	cert, err := tls.LoadX509KeyPair(tlsparams.TLSCertFile, tlsparams.TLSKeyFile)
+	if err != nil {
+		return
+	}
+	// Load CA cert
+	caCert, err := ioutil.ReadFile(tlsparams.TLSCAFile)
+	if err != nil {
+		return
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	config := tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs: caCertPool,
+		InsecureSkipVerify: len(tlsparams.TLSServerName) == 0,
+		ServerName: tlsparams.TLSServerName,
+		/* FIXME!!
+		CipherSuites: []uint16 {
+			tls.TLS_RSA_WITH_RC4_128_SHA,
+			tls.TLS_RSA_WITH_3DES_EDE_CBC_SHA,
+			tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			tls.TLS_ECDHE_RSA_WITH_RC4_128_SHA,
+			tls.TLS_RSA_WITH_AES_128_CBC_SHA,
+			tls.TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,
+		},
+		*/
+	}
+
+	b, err := di.Marshal()
+	if err != nil {
+		return
+	}
+
+	// Zabbix doesn't support persistent connections, so open/close it every time.
+	conn, err := tls.Dial(addr.Network(), addr.String(), &config)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+
+	return send(conn, b)
+}
 
 // Send DataItems to Zabbix server and wait for response.
 // Returns encountered fatal error like I/O and marshalling/unmarshalling.
@@ -40,6 +104,10 @@ func Send(addr *net.TCPAddr, di DataItems) (res *Response, err error) {
 	}
 	defer conn.Close()
 
+	return send(conn, b)
+}
+
+func send(conn net.Conn, b []byte) (res *Response, err error) {
 	_, err = conn.Write(b)
 	if err != nil {
 		return
