@@ -62,8 +62,8 @@ func (di DataItems) Marshal() (b []byte, err error) {
 		// the order of fields in this "JSON" is important - request should be before data
 		now := fmt.Sprint(time.Now().Unix())
 		nowNs := fmt.Sprint(time.Now().Nanosecond())
-		datalen := uint64(len(d) + len(now) + 42) // 32 + d + 9 + now + 1
-		b = make([]byte, 0, datalen+13)           // datalen + 5 + 8
+		datalen := uint64(len(d) + len(now) + len(nowNs) + 48) // 32 + d + 9 + now + 6 + nowNs + 1
+		b = make([]byte, 0, datalen+13)                        // datalen + 5 + 8
 		buf := bytes.NewBuffer(b)
 		buf.Write(header)                                     // 5
 		err = binary.Write(buf, binary.LittleEndian, datalen) // 8
@@ -71,7 +71,7 @@ func (di DataItems) Marshal() (b []byte, err error) {
 		buf.Write(d)                                          // d
 		buf.WriteString(`,"clock":`)                          // 9
 		buf.WriteString(now)                                  // now
-		buf.WriteString(`,"ns":`)
+		buf.WriteString(`,"ns":`)                             // 6
 		buf.WriteString(nowNs)
 		buf.WriteByte('}') // 1
 		b = buf.Bytes()
