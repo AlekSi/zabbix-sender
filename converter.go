@@ -30,21 +30,22 @@ func ConvertValue(i interface{}) string {
 
 // Single Zabbix data item.
 type DataItem struct {
-	Hostname  string `json:"host"`
-	Key       string `json:"key"`
-	Timestamp int64  `json:"clock,omitempty"` // UNIX timestamp, 0 is ignored
-	Value     string `json:"value"`           // Use ConvertValue() to fill
+	Hostname   string `json:"host"`
+	Key        string `json:"key"`
+	Value      string `json:"value"`           // Use ConvertValue() to fill
+	Timestamp  int64  `json:"clock,omitempty"` // UNIX timestamp, 0 is ignored
+	Nanosecond int    `json:"ns,omitempty"`    // UNIX nanoseconds timestamp, 0 is ignored
 }
 
 type DataItems []DataItem
 
 // Convert key/value pairs to DataItems using ConvertValue().
-// Each DataItem's Host is set to hostname, Timestamp is zeroed.
-func MakeDataItems(kv map[string]interface{}, hostname string) DataItems {
+// Each DataItem's Host is set to hostname, in case Timestamp is 0 - it gonna be omitted.
+func MakeDataItems(kv map[string]interface{}, hostname string, timestamp time.Time, nanoseconds time.Time) DataItems {
 	di := make(DataItems, len(kv))
 	i := 0
 	for k, v := range kv {
-		di[i] = DataItem{hostname, k, 0, ConvertValue(v)}
+		di[i] = DataItem{hostname, k, ConvertValue(v), timestamp.Unix(), nanoseconds.Nanosecond()}
 		i++
 	}
 
@@ -53,14 +54,16 @@ func MakeDataItems(kv map[string]interface{}, hostname string) DataItems {
 
 // Converts filled DataItems to format accepted by Zabbix server.
 // It's like dense JSON with binary header, somewhat documented there:
-// https://www.zabbix.com/documentation/2.0/manual/appendix/items/activepassive
+// https://www.zabbix.com/documentation/3.2/manual/appendix/items/activepassive
+// and here: https://www.zabbix.org/wiki/Docs/protocols/zabbix_agent/3.0
 func (di DataItems) Marshal() (b []byte, err error) {
 	d, err := json.Marshal(di)
 	if err == nil {
 		// the order of fields in this "JSON" is important - request should be before data
 		now := fmt.Sprint(time.Now().Unix())
-		datalen := uint64(len(d) + len(now) + 42) // 32 + d + 9 + now + 1
-		b = make([]byte, 0, datalen+13)           // datalen + 5 + 8
+		nowNs := fmt.Sprint(time.Now().Nanosecond())
+		datalen := uint64(len(d) + len(now) + len(nowNs) + 48) // 32 + d + 9 + now + 6 + nowNs + 1
+		b = make([]byte, 0, datalen+13)                        // datalen + 5 + 8
 		buf := bytes.NewBuffer(b)
 		buf.Write(header)                                     // 5
 		err = binary.Write(buf, binary.LittleEndian, datalen) // 8
@@ -68,7 +71,9 @@ func (di DataItems) Marshal() (b []byte, err error) {
 		buf.Write(d)                                          // d
 		buf.WriteString(`,"clock":`)                          // 9
 		buf.WriteString(now)                                  // now
-		buf.WriteByte('}')                                    // 1
+		buf.WriteString(`,"ns":`)                             // 6
+		buf.WriteString(nowNs)
+		buf.WriteByte('}') // 1
 		b = buf.Bytes()
 	}
 	return

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 var (
@@ -17,14 +18,14 @@ var (
 	f64  float64 = 3.141592653
 	i    int     = 42
 	s    string  = "string"
-	e    error   = fmt.Errorf("error")
+	e    error   = fmt.Errorf("%v", "error")
 	p0   *string
 	data = map[string]interface{}{"f0": f0, "f1": f1, "float32": f32, "float64": f64,
 		"int": i, "s": s, "e": e, "p0": p0}
 )
 
 func TestMakeDataItems(t *testing.T) {
-	di := MakeDataItems(data, "localhost")
+	di := MakeDataItems(data, "localhost", time.Unix(0, 0), time.Unix(0, 0))
 	t.Logf("%+v", di)
 	for _, d := range di {
 		if d.Hostname != "localhost" {
@@ -73,12 +74,13 @@ func TestMakeDataItems(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
-	di := MakeDataItems(data, "localhost")
+	di := MakeDataItems(data, "localhost", time.Now(), time.Now())
 	b, err := di.Marshal()
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Logf("%s", b)
+
 	if len(b) != cap(b) {
 		t.Errorf("Optimize: len(%d) != cap(%d)", len(b), cap(b))
 	}
